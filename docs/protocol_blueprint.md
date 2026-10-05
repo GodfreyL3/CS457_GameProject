@@ -343,10 +343,21 @@ From here, the raw string JSON data is stored in a buffer until "\n" is found, d
 
 # Connection Termination & Socket Lifecycle Management
 
-## Application Layer Disconnect
+The host server is expected to run a loop that breaks off a thread to process each request coming from either client. This way, no matter what turn, a disconnect of any form can be handled without being blocked by an existing server process or a blocking ```recv()``` waiting for client input.
 
 ### Graceful Disconnect
 - "<b>DISCONNECT</b>" standard message sent from client to game server
+- socket object pertaining to client is uninitialized 
+- Host takes note, depending on game state:
+    - Will take game back to game start (```WAIT_FOR_PLAYERS```)
+    - OR will wait for a reconnect until either scenario: (```OTHER_PLAYER_DISCONNECTED```)
+        - Existing Player Quits -> Back to game start
+        - Existing player decides to restart run -> Back to game start
+        - 2nd client reconnects -> Previous level state is sent to both users and game resumes
+
+### TCP EOF
+- Host makes ```socket.recv()``` call, and gets ```b""``` back signalling TCP EOF
+- socket object pertaining to client is uninitialized 
 - Host takes note, depending on game state:
     - Will take game back to game start (```WAIT_FOR_PLAYERS```)
     - OR will wait for a reconnect until either scenario: (```OTHER_PLAYER_DISCONNECTED```)
@@ -356,7 +367,8 @@ From here, the raw string JSON data is stored in a buffer until "\n" is found, d
 
 ### Broken Pipe (Client socket closed)
 - on ```socket.send()```,  ```EPIPE``` is immediatley returned to server
-- Host checks for this case/Captures ```BrokenPipeError```, depending on game state:
+- Host checks for this case/Captures ```BrokenPipeError``` thrown by thrown by ```socket.recv()```, depending on game state:
+- socket object pertaining to client is uninitialized 
     - Will take game back to game start (```WAIT_FOR_PLAYERS```)
     - OR will wait for a reconnect until either scenario: (```OTHER_PLAYER_DISCONNECTED```)
         - Existing Player Quits -> Back to game start
@@ -364,8 +376,8 @@ From here, the raw string JSON data is stored in a buffer until "\n" is found, d
         - 2nd client reconnects -> Previous level state is sent to both users and game resumes
 
 ### Hard Disconnect (RST Packet Arrives)
-- on ```socket.recv()```, ```b""``` is received to signal reset RST
-- Host checks for this case/Captures ```ConnectionResetError```, depending on game state:
+- Host checks for this case/Captures ```ConnectionResetError``` thrown by ```socket.recv()``` , depending on game state:
+- socket object pertaining to client is uninitialized 
     - Will take game back to game start (```WAIT_FOR_PLAYERS```)
     - OR will wait for a reconnect until either scenario: (```OTHER_PLAYER_DISCONNECTED```)
         - Existing Player Quits -> Back to game start
@@ -375,8 +387,8 @@ From here, the raw string JSON data is stored in a buffer until "\n" is found, d
 ### Hard Disconnect (RST Packet is Sent but dropped)
 - Timeout is set on receiving server TCP socket. 
     - ```socket.settimeout(x)```
-- on ```socket.recv()```, no data is received before timeout window
-- Host checks for this case/Captures ```TimeoutError```, depending on game state:
+- Host checks for this case/Captures ```TimeoutError``` thrown by ```socket.recv()``` on timeout period, depending on game state:
+- socket object pertaining to client is uninitialized 
     - Will take game back to game start (```WAIT_FOR_PLAYERS```)
     - OR will wait for a reconnect until either scenario: (```OTHER_PLAYER_DISCONNECTED```)
         - Existing Player Quits -> Back to game start
