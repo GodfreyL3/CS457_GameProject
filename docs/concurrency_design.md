@@ -1,13 +1,13 @@
 # Concurrency Design
 
 ## Concurrency Model Selection: Non-Blocking I/O Multiplexing
-For this project, I feel that Non-Blocking I/O would make the most sense to implement for this project. Since this game is turn based for both players and the server (who is also a "player" in this context!), having unique threads running for each one would introduce complexity that is not needed for this project. While clock cycles aren't much of a concern (each thread can block waiting for input, but even then these cycles must be "reserved"), having to use mutexes and semaphores for critical sections of code can introduce uneeded complexity to what could just be handled by a single thread running non-blocking I/O. If a client whose not currently the "turn-holder" sends a request, the server will just send a message back saying it's not their turn. 
+For this project, I feel that Non-Blocking I/O would make the most sense to implement for this project. Since this game is turn based for both players and the server (who is also a "player" in this case), I/O multiplexing lets the server handle multiple clients without dedicating a thread to each one.
 
 ### Initializing/Accepting a new client socket
-At first initialization, ther server program will listen to all addresses coming in on a certain port (lets use 61616 for an example). It will bind to 0.0.0.0:61616 and be set to listen and to not block. After setting, we will enter a loop. In the I/O loop, we are able to check which sockets are readable. Depending what socket that is readable (the server socket itself or an existing socket), the server will process them accordingly. For new connections, the server acccepts the new connection, takes the resultsing socket object from the new connection, and stores it in a list of tracked sockets. It will additionally create a Player object, and assign the socket to the object as a class variable.\n
+At first initialization, the server program will listen to all addresses coming in on a certain port (lets use 61616 for an example). It will bind to 0.0.0.0:61616 and be set to listen and to not block, so incoming connections can be accepted as they arrive.
 
 #### Example:
-```
+```python
 HOST = "0.0.0.0"
 PORT = 9003
 
@@ -26,8 +26,8 @@ while inputs:
     for s in readable:
         if s is server:
             conn, addr = server.accept()
-            conn.setblocking(False)  
-            inputs.append(conn)  
+            conn.setblocking(False)
+            inputs.append(conn)
             message_queues[conn] = []
 ```
 
@@ -35,13 +35,13 @@ while inputs:
 To further differentiate client connections to the server, each client will have a unique player name and ID. A Player object will be created server-side with all the data needed to hold a player's state.
 
 ### Game loop servicing
-The game as stated before will be turn-based. That being said, player and server moves will always be sequential. However, this does not stop the clients themselves from sending messages when it's not their turn. The client program will not allow the player to send a message until they get a "PLAYER_TURN" message from the server (Missing from sprint 1 unfortunatley). However, if a "PLAYER_AREA_ACTION" message is sent when it's not their turn, they will get an appropriate error message. When messages are sent, they must be one of the standard Client->Server messages otherwise an error message is sent back to the client. The standard message is parsed and associated with some action from the server, and metadata from the message body will act as variables.
+The game as stated before will be turn-based. That being said, player and server moves will always be sequential. However, this does not stop the clients themselves from sending messages when it's not their turn; the server will just validate and reject anything that is out of order.
 
 ### Client teardown
-If a client leaves gracefully, their associated socket will be removed from the monitored sockets, and closed for any future messages. This event will happen when the socket is readable with the appropriate close message. If closed suddenly, it will be caught as an "exceptional" socket, and closed the same way. Both connections will be reported to the server, and if need be forwarded to the still-connected client.
+If a client leaves gracefully, their associated socket will be removed from the monitored sockets, and closed for any future messages. This event will happen when the socket is readable with the appropriate disconnect signal.
 
 ## Thread saftey
-Because this game is cooperative and the need for hiding intent is not needed, no data will be hidden from either client during this game. Both will share the Level number, level state (enemies, events, etc.), player states (inventories, health, names). The only thing "restricted" will be what one client can change (only their own player). As for changing the data, the natire of Non-Blocking I/O lets us not worry about race conditions as your would see in multi-threaded applications. Protecting critical code segments with locks is not needed. 
+Because this game is cooperative and the need for hiding intent is not needed, no data will be hidden from either client during this game. Both will share the Level number, level state (enemies, events, rewards), and turn order.
 
 ## Sequence Diagram
 
@@ -117,7 +117,7 @@ sequenceDiagram
         else Player 1 chooses to wait
             P1->>S: DISCONNECT_CHOICE (wait)
             S-->>P1: WAIT_FOR_RECONNECT
-            Note over P1,S: Run stays paused&#59; Player 1 may still choose abandon
+            Note over P1,S: Run stays paused; Player 1 may still choose abandon
             P2->>S: RECONNECT (session credentials)
             S->>S: Validate reconnect and restore Player 2's session
             S-->>P2: RECONNECT_OK
@@ -126,6 +126,4 @@ sequenceDiagram
             S-->>P2: AREA_SELECT (preserved choices and vote status)
         end
     end
-
-
 ```
