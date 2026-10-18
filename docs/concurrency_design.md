@@ -117,7 +117,7 @@ sequenceDiagram
         else Player 1 chooses to wait
             P1->>S: DISCONNECT_CHOICE (wait)
             S-->>P1: WAIT_FOR_RECONNECT
-            Note over P1,S: Run stays paused; Player 1 may still choose abandon
+            Note over P1,S: Run stays paused
             P2->>S: RECONNECT (session credentials)
             S->>S: Validate reconnect and restore Player 2's session
             S-->>P2: RECONNECT_OK
