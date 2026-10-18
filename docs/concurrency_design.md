@@ -37,10 +37,10 @@ To further differentiate client connections to the server, each client will have
 ### Game loop servicing
 The game as stated before will be turn-based. That being said, player and server moves will always be sequential. However, this does not stop the clients themselves from sending messages when it's not their turn; the server will just validate and reject anything that is out of order.
 
-### Client teardown
+### Client Teardown
 If a client leaves gracefully, their associated socket will be removed from the monitored sockets, and closed for any future messages. This event will happen when the socket is readable with the appropriate disconnect signal.
 
-## Thread saftey
+## Thread Safety
 Because this game is cooperative and the need for hiding intent is not needed, no data will be hidden from either client during this game. Both will share the Level number, level state (enemies, events, rewards), and turn order.
 
 ## Sequence Diagram
