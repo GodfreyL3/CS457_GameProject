@@ -1,6 +1,6 @@
 import random
 
-from stats import Stat
+from core.stats import Stat
 
 
 class StatusEffect:
