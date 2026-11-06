@@ -2,7 +2,7 @@ import csv
 import random
 from pathlib import Path
 
-from entities.entity import Entity
+from entities.entity import Entity, RESISTED_DAMAGE_MULTIPLIER
 
 
 ENEMY_DATA_PATH = Path(__file__).resolve().parents[2] / "data" / "enemy_data.csv"
@@ -39,26 +39,27 @@ class Enemy(Entity):
     def getLootTable(self):
         return self.loot_table
 
+    def getResistance(self):
+        return self.resistance
+
     def rollDamage(self):
         return random.randint(self.damage_min, self.damage_max)
 
     def getDamageType(self):
         return self.damage_type
 
-    def getResistance(self):
-        return self.resistance
-
     def rollCoins(self):
         return random.randint(self.coin_min, self.coin_max)
 
     def takeDamage(self, amount: int, damage_type: str):
-
-        # Check dexterity for evasion
-        if random.random() < (self.dexterity * 2) / 100:
+        if self.evadesAttack():
             return
 
-        # Apply resistance modifier if applicable
         if self.resistance == damage_type:
-            amount *= 0.7
+            amount *= RESISTED_DAMAGE_MULTIPLIER
 
         self.modifyHealth(-int(amount))
+
+    def attack(self, target):
+        if target.isAlive():
+            target.takeDamage(self.rollDamage(), self.getDamageType())

@@ -12,3 +12,4 @@ class Stat(Enum):
     DEX = "DEX"
     STR = "STR"
     INT = "INT"
+    DEFENSE = "DEFENSE"

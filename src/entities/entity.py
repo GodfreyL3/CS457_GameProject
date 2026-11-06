@@ -1,11 +1,18 @@
 import random
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
+
+from core.stats import Stat
+
+
 # Damage multiplier when attacker and target affinities differ
 AFFINITY_MISMATCH_MULTIPLIER = 0.6
-RESISTED_DAMAGE_MULTIPLIER = 0.5
+# Damage multiplier when the target resists the incoming damage type
+RESISTED_DAMAGE_MULTIPLIER = 0.7
+# Evasion chance gained per point of dexterity
+EVASION_PER_DEX = 0.02
 
 
-class Entity:
+class Entity(ABC):
     """Shared base for anything that can fight: players and enemies."""
 
     def __init__(self, name: str, max_health: int, constitution: int, dexterity: int,
@@ -29,20 +36,24 @@ class Entity:
     def getMaxHealth(self):
         return self.max_health
 
-    def getConstitution(self):
-        return self.constitution
-
-    def getDexterity(self):
-        return self.dexterity
-
-    def getStrength(self):
-        return self.strength
-
-    def getIntelligence(self):
-        return self.intelligence
-
     def getAffinity(self):
         return self.affinity
+
+    # Stat getters include bonuses from active status effects
+    def getConstitution(self):
+        return self.constitution + self.getEffectBonus(Stat.CON)
+
+    def getDexterity(self):
+        return self.dexterity + self.getEffectBonus(Stat.DEX)
+
+    def getStrength(self):
+        return self.strength + self.getEffectBonus(Stat.STR)
+
+    def getIntelligence(self):
+        return self.intelligence + self.getEffectBonus(Stat.INT)
+
+    def getEffectBonus(self, stat: Stat):
+        return sum(e.getAmount() for e in self.status_effects if e.getStat() == stat)
 
     # For healing and damage effects
     def modifyHealth(self, amount: int):
@@ -69,23 +80,25 @@ class Entity:
             if not effect.isActive():
                 self.status_effects.remove(effect)
 
-    # Hooks for subclasses: where damage and resistance come from differs
-    def rollDamage(self) -> int:
-        raise NotImplementedError
-
-    def getDamageType(self):
-        raise NotImplementedError
+    def evadesAttack(self):
+        return random.random() < self.getDexterity() * EVASION_PER_DEX
 
     def getResistance(self):
         return None
 
-    # For taking damage, considering resistance
+    # Hooks for subclasses: where damage comes from differs
+    @abstractmethod
+    def rollDamage(self) -> int:
+        pass
+
+    @abstractmethod
+    def getDamageType(self) -> str:
+        pass
+
     @abstractmethod
     def takeDamage(self, amount: int, damage_type: str):
         pass
-        
 
-    # For attacking, taking into account affinity matching
     @abstractmethod
     def attack(self, target):
         pass

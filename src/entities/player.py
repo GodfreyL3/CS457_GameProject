@@ -1,8 +1,10 @@
-from random import random
+import random
 
-from entities.entity import Entity
+from core.stats import Stat
+from entities.entity import Entity, AFFINITY_MISMATCH_MULTIPLIER, RESISTED_DAMAGE_MULTIPLIER
 from entities.character_classes import ThiefClass, WizardClass, KnightClass
 from items.item_factory import ItemFactory
+
 
 class Player(Entity):
     def __init__(self, name: str, character_class: str):
@@ -15,7 +17,7 @@ class Player(Entity):
         else:
             raise ValueError(f"Unknown character class: {character_class}")
 
-        # health is based on constitution
+        # Health is based on constitution
         super().__init__(
             name=name,
             max_health=10 + (2 * char_class.getConstitution()),
@@ -29,61 +31,21 @@ class Player(Entity):
 
         # Starting equipment is stored as catalog IDs: weapon, armour, then consumables
         factory = ItemFactory()
-        weapon_id, armour_id, *consumable_ids = self.character_class.getStartingEquipment()
+        weapon_id, armour_id, *consumable_ids = char_class.getStartingEquipment()
         self.weapon = factory.create_weapon(weapon_id)
         self.armor = factory.create_armour(armour_id)
         self.backpack = [factory.create_consumable(i) for i in consumable_ids]
 
-
+    # Base stat + status effects (from Entity) + armour bonus
     def getDexterity(self):
-
-        # Get initial dex from base dexterity and armor bonus
-        dex = self.dexterity + self.armor.getDexBonus()
-
-        # Add from effect bonuses if any
-        for effect in self.active_effects:
-            if effect.getStat() == "DEXTERITY":
-                dex += effect.getAmount()
-
+        dex = super().getDexterity()
+        if self.armor:
+            dex += self.armor.getDexBonus()
         return dex
 
-    def getStrength(self):
-
-        # Get initial strength from base strength and armor bonus
-        strength = self.strength
-
-        # Add from effect bonuses if any
-        for effect in self.active_effects:
-            if effect.getStat() == "STRENGTH":
-                strength += effect.getAmount()
-
-        return strength
-
-    def getIntelligence(self):
-
-        # Get initial intelligence from base intelligence and armor bonus
-        intelligence = self.intelligence
-
-        # Add from effect bonuses if any
-        for effect in self.active_effects:
-            if effect.getStat() == "INTELLIGENCE":
-                intelligence += effect.getAmount()
-
-        return intelligence
-
     def getDefense(self):
-
-        # Get initial defense from armor, if exists
-        defense = 0
-        if self.armor:
-            defense += self.armor.defense
-
-        # Add from effect bonuses if any
-        for effect in self.active_effects:
-            if effect.getStat() == "DEFENSE":
-                defense += effect.getAmount()
-
-        return defense
+        defense = self.armor.defense if self.armor else 0
+        return defense + self.getEffectBonus(Stat.DEFENSE)
 
     def getWeapon(self):
         return self.weapon
@@ -117,23 +79,17 @@ class Player(Entity):
         return self.weapon.damage_type
 
     def getResistance(self):
-        return self.armor.getResistance() if self.armor else None
-
+        return self.armor.getResistance() if self.armor and self.armor.getResistance() != "none" else None
 
     def takeDamage(self, amount: int, damage_type: str):
-
-        # Calculate evasion chance based on dexterity
-        if random.random() < (self.getDexterity() * 2) / 100:
+        if self.evadesAttack():
             return
 
-        # apply defense from armor, random factor included
-        if self.armor:
-            amount -= self.armor.defense * random()
+        # Armour defense is applied with a random factor, and can't heal
+        amount = max(0, amount - self.getDefense() * random.random())
 
-        # add resistance modifier based on armor
-        if self.armor and self.armor.getResistance() == damage_type:
-            amount *= 0.7
-
+        if self.getResistance() == damage_type:
+            amount *= RESISTED_DAMAGE_MULTIPLIER
 
         self.modifyHealth(-int(amount))
 
@@ -141,5 +97,5 @@ class Player(Entity):
         if target.isAlive():
             damage = self.rollDamage()
             if self.affinity != target.getAffinity():
-                damage *= 0.6
+                damage *= AFFINITY_MISMATCH_MULTIPLIER
             target.takeDamage(int(damage), self.getDamageType())
