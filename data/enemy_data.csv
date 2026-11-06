@@ -9,3 +9,33 @@ id,name,loot_table,max_health,CON,DEX,STR,INT,affinity,damage_min,damage_max,dam
 8,Ogre,elite,32,8,2,9,1,STR,5,9,bludgeoning,none,12,28
 9,Wraith,elite,24,4,7,2,8,INT,4,8,arcane,slashing,12,28
 10,Dragon,boss,60,10,5,10,8,STR,8,14,fire,fire,40,80
+11,Giant Spider,weak,9,2,7,2,1,DEX,2,4,piercing,none,1,5
+12,Bat Swarm,weak,7,1,8,1,1,DEX,1,3,piercing,none,0,3
+13,Kobold,weak,8,2,5,2,3,DEX,1,4,slashing,none,1,5
+14,Zombie,weak,14,5,1,4,1,STR,2,4,bludgeoning,none,1,6
+15,Wolf,weak,10,3,7,3,1,DEX,2,4,piercing,none,1,5
+16,Imp,weak,8,2,6,1,5,INT,1,4,fire,fire,2,6
+17,Cultist,weak,9,2,3,2,5,INT,2,4,arcane,none,2,7
+18,Mushroom Sprite,weak,8,3,4,1,4,INT,1,3,arcane,arcane,1,4
+19,Hobgoblin,normal,20,5,4,6,2,STR,3,6,slashing,none,5,14
+20,Gnoll,normal,18,4,6,5,2,DEX,3,6,piercing,none,5,13
+21,Harpy,normal,15,3,8,3,3,DEX,3,5,slashing,none,5,12
+22,Gargoyle,normal,24,7,2,6,2,STR,3,7,bludgeoning,slashing,6,16
+23,Fire Elemental,normal,18,4,4,2,7,INT,3,7,fire,fire,6,16
+24,Frost Witch,normal,16,3,4,1,8,INT,3,6,arcane,arcane,5,14
+25,Assassin,normal,15,3,9,4,3,DEX,4,7,piercing,none,6,16
+26,Dire Bear,normal,28,7,3,8,1,STR,4,7,slashing,none,6,15
+27,Storm Sprite,normal,14,3,7,1,7,INT,3,6,lightning,lightning,6,15
+28,Skeleton Knight,normal,22,6,3,7,2,STR,3,7,slashing,piercing,6,16
+29,Troll,elite,38,9,2,9,1,STR,5,10,bludgeoning,none,14,32
+30,Minotaur,elite,40,9,4,10,2,STR,6,11,slashing,none,16,35
+31,Vampire,elite,30,5,7,6,6,DEX,5,9,slashing,slashing,15,34
+32,Lich,elite,28,4,4,2,10,INT,5,10,arcane,arcane,16,36
+33,Stone Golem,elite,45,10,1,9,1,STR,5,9,bludgeoning,bludgeoning,14,30
+34,Shadow Stalker,elite,26,4,10,5,5,DEX,5,9,piercing,piercing,15,34
+35,Thunder Drake,elite,34,7,6,7,6,STR,6,10,lightning,lightning,16,36
+36,Goblin King,boss,55,8,5,8,5,STR,7,12,slashing,none,35,70
+37,Ancient Lich,boss,50,6,5,3,12,INT,8,14,arcane,arcane,40,80
+38,Hydra,boss,70,11,6,10,3,STR,8,13,piercing,piercing,40,85
+39,Demon Lord,boss,65,9,6,9,9,STR,9,15,fire,fire,45,90
+40,Shadow Dragon,boss,75,10,8,9,10,DEX,10,16,arcane,arcane,50,100

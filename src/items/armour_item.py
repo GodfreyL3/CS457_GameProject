@@ -1,8 +1,6 @@
-import csv
 from pathlib import Path
 
 from items.base_item import BaseItem
-from items.rarity_enum import RarityEnum
 
 
 ARMOUR_DATA_PATH = Path(__file__).resolve().parents[2] / "data" / "armour_data.csv"
@@ -12,21 +10,18 @@ class ArmourItem(BaseItem):
     def __init__(self, id: int):
         super().__init__(id, type="armour")
 
-        # Armour catalog reference: ARMOUR_DATA_PATH. CSV loading is not implemented.
+        row = self.load_row(ARMOUR_DATA_PATH, id, "Armour")
+        self.load_common_fields(row)
+        self.defense = int(row['defense'])
+        self.dex_bonus = int(row['dex_bonus'])
+        # Damage type this armour resists, or "none"
+        self.resistance = row['resistance']
+        self.slot = row['slot']
+        self.affinity = row['affinity']
 
-        # Load armour data from the CSV file
-        with open(ARMOUR_DATA_PATH, newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
-            for row in reader:
-                if int(row['id']) == id:
-                    self.name = row['name']
-                    self.rarity = RarityEnum[row['rarity']]
-                    self.prefix = row['prefix']
-                    self.defense = int(row['defense'])
-                    self.resistance = int(row['resistance'])
-                    self.dex_bonus = int(row['dex_bonus'])
-                    self.value = int(row['value'])
-                    self.affinity = row['affinity']
+    def getResistance(self):
+        return self.resistance
 
-                else:
-                    raise ValueError(f"Armour with id {id} not found.")
+    def display_info(self):
+        return (f"{self.getFullName()} [{self.rarity.name}] "
+                f"DEF {self.defense}, resists {self.resistance}")

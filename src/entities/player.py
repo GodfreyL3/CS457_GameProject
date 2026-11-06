@@ -1,6 +1,6 @@
 from entities.entity import Entity
 from entities.character_classes import ThiefClass, WizardClass, KnightClass
-from items.weapon_item import WeaponItem
+from items.item_factory import ItemFactory
 
 class Player(Entity):
     def __init__(self, name: str, character_class: str):
@@ -25,10 +25,12 @@ class Player(Entity):
         )
         self.character_class = char_class
 
-        # Add starting equipment to player attributes
-        self.weapon = self.character_class.getStartingEquipment()[0]
-        self.armor = self.character_class.getStartingEquipment()[1]
-        self.backpack = self.character_class.getStartingEquipment()[2:]
+        # Starting equipment is stored as catalog IDs: weapon, armour, then consumables
+        factory = ItemFactory()
+        weapon_id, armour_id, *consumable_ids = self.character_class.getStartingEquipment()
+        self.weapon = factory.create_weapon(weapon_id)
+        self.armor = factory.create_armour(armour_id)
+        self.backpack = [factory.create_consumable(i) for i in consumable_ids]
 
     def getWeapon(self):
         return self.weapon
