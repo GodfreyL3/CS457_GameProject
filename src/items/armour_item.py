@@ -22,6 +22,11 @@ class ArmourItem(BaseItem):
     def getResistance(self):
         return self.resistance
 
+    def getDexBonus(self):
+        return self.dex_bonus
+
     def display_info(self):
         return (f"{self.getFullName()} [{self.rarity.name}] "
                 f"DEF {self.defense}, resists {self.resistance}")
+
+

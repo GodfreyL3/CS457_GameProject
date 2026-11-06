@@ -50,3 +50,15 @@ class Enemy(Entity):
 
     def rollCoins(self):
         return random.randint(self.coin_min, self.coin_max)
+
+    def takeDamage(self, amount: int, damage_type: str):
+
+        # Check dexterity for evasion
+        if random.random() < (self.dexterity * 2) / 100:
+            return
+
+        # Apply resistance modifier if applicable
+        if self.resistance == damage_type:
+            amount *= 0.7
+
+        self.modifyHealth(-int(amount))

@@ -1,5 +1,5 @@
 import random
-
+from abc import abstractmethod, ABC
 # Damage multiplier when attacker and target affinities differ
 AFFINITY_MISMATCH_MULTIPLIER = 0.6
 RESISTED_DAMAGE_MULTIPLIER = 0.5
@@ -80,21 +80,12 @@ class Entity:
         return None
 
     # For taking damage, considering resistance
+    @abstractmethod
     def takeDamage(self, amount: int, damage_type: str):
-        if self.getResistance() == damage_type:
-            amount *= RESISTED_DAMAGE_MULTIPLIER
-
-        # also take into account dex for possible evasion
-        evasion_chance = self.getDexterity() * 2 / 100
-        if random.random() < evasion_chance:
-            amount = 0
+        pass
         
-        self.modifyHealth(-int(amount))
 
     # For attacking, taking into account affinity matching
+    @abstractmethod
     def attack(self, target):
-        if target.isAlive():
-            damage = self.rollDamage()
-            if self.affinity != target.getAffinity():
-                damage *= AFFINITY_MISMATCH_MULTIPLIER
-            target.takeDamage(int(damage), self.getDamageType())
+        pass

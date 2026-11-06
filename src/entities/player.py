@@ -1,3 +1,5 @@
+from random import random
+
 from entities.entity import Entity
 from entities.character_classes import ThiefClass, WizardClass, KnightClass
 from items.item_factory import ItemFactory
@@ -32,6 +34,57 @@ class Player(Entity):
         self.armor = factory.create_armour(armour_id)
         self.backpack = [factory.create_consumable(i) for i in consumable_ids]
 
+
+    def getDexterity(self):
+
+        # Get initial dex from base dexterity and armor bonus
+        dex = self.dexterity + self.armor.getDexBonus()
+
+        # Add from effect bonuses if any
+        for effect in self.active_effects:
+            if effect.getStat() == "DEXTERITY":
+                dex += effect.getAmount()
+
+        return dex
+
+    def getStrength(self):
+
+        # Get initial strength from base strength and armor bonus
+        strength = self.strength
+
+        # Add from effect bonuses if any
+        for effect in self.active_effects:
+            if effect.getStat() == "STRENGTH":
+                strength += effect.getAmount()
+
+        return strength
+
+    def getIntelligence(self):
+
+        # Get initial intelligence from base intelligence and armor bonus
+        intelligence = self.intelligence
+
+        # Add from effect bonuses if any
+        for effect in self.active_effects:
+            if effect.getStat() == "INTELLIGENCE":
+                intelligence += effect.getAmount()
+
+        return intelligence
+
+    def getDefense(self):
+
+        # Get initial defense from armor, if exists
+        defense = 0
+        if self.armor:
+            defense += self.armor.defense
+
+        # Add from effect bonuses if any
+        for effect in self.active_effects:
+            if effect.getStat() == "DEFENSE":
+                defense += effect.getAmount()
+
+        return defense
+
     def getWeapon(self):
         return self.weapon
 
@@ -65,3 +118,28 @@ class Player(Entity):
 
     def getResistance(self):
         return self.armor.getResistance() if self.armor else None
+
+
+    def takeDamage(self, amount: int, damage_type: str):
+
+        # Calculate evasion chance based on dexterity
+        if random.random() < (self.getDexterity() * 2) / 100:
+            return
+
+        # apply defense from armor, random factor included
+        if self.armor:
+            amount -= self.armor.defense * random()
+
+        # add resistance modifier based on armor
+        if self.armor and self.armor.getResistance() == damage_type:
+            amount *= 0.7
+
+
+        self.modifyHealth(-int(amount))
+
+    def attack(self, target):
+        if target.isAlive():
+            damage = self.rollDamage()
+            if self.affinity != target.getAffinity():
+                damage *= 0.6
+            target.takeDamage(int(damage), self.getDamageType())
