@@ -13,3 +13,4 @@ class BaseItem(ABC):
     @abstractmethod
     def display_info(self):
         pass
+

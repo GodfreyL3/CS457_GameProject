@@ -1,0 +1,41 @@
+id,name,rarity,prefix,category,effect_type,stat,effect_min,effect_max,duration_turns,target,value
+1,Health Potion,common,Diluted,potion,heal,HEALTH,2,4,0,self,6
+2,Health Potion,common,Murky,potion,heal,HEALTH,3,4,0,self,7
+3,Health Potion,common,Stale,potion,heal,HEALTH,2,5,0,self,6
+4,Health Potion,uncommon,Clear,potion,heal,HEALTH,5,8,0,self,22
+5,Health Potion,uncommon,Fortified,potion,heal,HEALTH,6,8,0,self,26
+6,Health Potion,rare,Potent,potion,heal,HEALTH,9,13,0,self,65
+7,Health Potion,epic,Concentrated,potion,heal,HEALTH,14,18,0,self,150
+8,Health Potion,legendary,Perfected,potion,heal,HEALTH,22,28,0,self,380
+9,Strength Elixir,common,Weak,potion,buff,STR,1,1,2,self,8
+10,Strength Elixir,common,Bitter,potion,buff,STR,1,1,3,self,9
+11,Strength Elixir,common,Watery,potion,buff,STR,1,1,2,self,7
+12,Strength Elixir,uncommon,Bracing,potion,buff,STR,2,2,3,self,26
+13,Strength Elixir,uncommon,Spiced,potion,buff,STR,2,2,4,self,30
+14,Strength Elixir,rare,Potent,potion,buff,STR,3,3,4,self,70
+15,Strength Elixir,epic,Giant's,potion,buff,STR,4,5,5,self,170
+16,Strength Elixir,legendary,Titan's,potion,buff,STR,6,6,6,self,400
+17,Dexterity Elixir,common,Weak,potion,buff,DEX,1,1,2,self,8
+18,Dexterity Elixir,common,Cloudy,potion,buff,DEX,1,1,3,self,9
+19,Dexterity Elixir,common,Flat,potion,buff,DEX,1,1,2,self,7
+20,Dexterity Elixir,uncommon,Nimble,potion,buff,DEX,2,2,3,self,26
+21,Dexterity Elixir,uncommon,Quicksilver,potion,buff,DEX,2,2,4,self,30
+22,Dexterity Elixir,rare,Potent,potion,buff,DEX,3,3,4,self,70
+23,Dexterity Elixir,epic,Windswift,potion,buff,DEX,4,5,5,self,170
+24,Dexterity Elixir,legendary,Phantom's,potion,buff,DEX,6,6,6,self,400
+25,Intelligence Elixir,common,Weak,potion,buff,INT,1,1,2,self,8
+26,Intelligence Elixir,common,Murky,potion,buff,INT,1,1,3,self,9
+27,Intelligence Elixir,common,Fizzy,potion,buff,INT,1,1,2,self,7
+28,Intelligence Elixir,uncommon,Lucid,potion,buff,INT,2,2,3,self,26
+29,Intelligence Elixir,uncommon,Sage's,potion,buff,INT,2,2,4,self,30
+30,Intelligence Elixir,rare,Potent,potion,buff,INT,3,3,4,self,70
+31,Intelligence Elixir,epic,Arcane,potion,buff,INT,4,5,5,self,170
+32,Intelligence Elixir,legendary,Archmage's,potion,buff,INT,6,6,6,self,400
+33,Bomb,common,Crude,item,damage,HEALTH,2,4,0,enemy,10
+34,Bomb,common,Leaky,item,damage,HEALTH,1,4,0,enemy,8
+35,Bomb,common,Smoky,item,damage,HEALTH,2,3,0,enemy,9
+36,Bomb,uncommon,Powder,item,damage,HEALTH,4,7,0,enemy,30
+37,Bomb,uncommon,Sticky,item,damage,HEALTH,5,7,0,enemy,34
+38,Bomb,rare,Volatile,item,damage,HEALTH,8,12,0,enemy,80
+39,Bomb,epic,Thunderous,item,damage,HEALTH,12,16,0,enemy,190
+40,Bomb,legendary,Dragonfire,item,damage,HEALTH,18,24,0,enemy,450

@@ -1,0 +1,33 @@
+id,name,rarity,prefix,defense,dex_bonus,resistance,value,slot,affinity
+1,Robe,common,Threadbare,1,1,none,5,body,INT
+2,Robe,common,Patched,1,0,none,6,body,INT
+3,Robe,common,Frayed,1,1,none,4,body,INT
+4,Robe,uncommon,Woven,2,1,none,22,body,INT
+5,Robe,uncommon,Sturdy,2,0,none,26,body,INT
+6,Robe,rare,Embroidered,3,1,arcane,70,body,INT
+7,Robe,epic,Enchanted,4,2,arcane,180,body,INT
+8,Robe,legendary,Archmage's,6,2,arcane,440,body,INT
+9,Leather Armour,common,Worn-out,2,1,none,8,body,DEX
+10,Leather Armour,common,Cracked,2,0,none,7,body,DEX
+11,Leather Armour,common,Stiff,2,0,none,9,body,DEX
+12,Leather Armour,uncommon,Hardened,3,1,none,28,body,DEX
+13,Leather Armour,uncommon,Studded,4,0,none,33,body,DEX
+14,Leather Armour,rare,Reinforced,5,1,none,78,body,DEX
+15,Leather Armour,epic,Shadowbound,6,2,lightning,195,body,DEX
+16,Leather Armour,legendary,Dragonhide,8,2,fire,460,body,DEX
+17,Chainmail,common,Rusty,3,-1,none,10,body,STR
+18,Chainmail,common,Dented,3,0,none,11,body,STR
+19,Chainmail,common,Mismatched,3,-1,none,9,body,STR
+20,Chainmail,uncommon,Riveted,5,0,none,32,body,STR
+21,Chainmail,uncommon,Interlocked,5,-1,none,36,body,STR
+22,Chainmail,rare,Tempered,6,0,none,88,body,STR
+23,Chainmail,epic,Runed,8,0,arcane,215,body,STR
+24,Chainmail,legendary,Starforged,10,1,radiant,490,body,STR
+25,Plate Armour,common,Battered,4,-2,none,12,body,STR
+26,Plate Armour,common,Rusted,4,-3,none,10,body,STR
+27,Plate Armour,common,Ill-fitting,5,-3,none,13,body,STR
+28,Plate Armour,uncommon,Polished,6,-2,none,38,body,STR
+29,Plate Armour,uncommon,Fluted,7,-2,none,44,body,STR
+30,Plate Armour,rare,Masterwork,8,-1,none,100,body,STR
+31,Plate Armour,epic,Titan-forged,10,-1,fire,250,body,STR
+32,Plate Armour,legendary,Worldbreaker's,13,0,lightning,560,body,STR

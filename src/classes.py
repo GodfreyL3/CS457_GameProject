@@ -39,8 +39,8 @@ class ThiefClass(BaseClass):
         super().__init__(constitution=4, dexterity=7, strength=2, intelligence=5)
         self.affinity = "DEX"
 
-        # Starting equipment for Thief
-        self.starting_equipment = ["Starting Dagger", "Starting Leather Armor", "Health Potion", "Health Potion"]  # Example starting equipment for Thief
+        # Starting equipment for Thief, number IDs from the item catalog
+        self.starting_equipment = [13, 9, 3, 3]  # Example starting equipment for Thief
 
 
 class WizardClass(BaseClass):
@@ -49,7 +49,7 @@ class WizardClass(BaseClass):
         self.affinity = "INT"
 
         # Starting equipment for Wizard
-        self.starting_equipment = ["Starting Staff", "Starting Robe", "Health Potion", "Health Potion"]  # Example starting equipment for Wizard
+        self.starting_equipment = [97, 1, 3, 3]  # Example starting equipment for Wizard
 
 
 class KnightClass(BaseClass):
@@ -58,4 +58,4 @@ class KnightClass(BaseClass):
         self.affinity = "STR"
 
         # Starting equipment for Knight
-        self.starting_equipment = ["Starting Sword", "Starting Plate Armor", "Health Potion", "Health Potion"]  # Example starting equipment for Knight
+        self.starting_equipment = [2, 25, 3, 3]  # Example starting equipment for Knight
