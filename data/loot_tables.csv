@@ -1,0 +1,6 @@
+table,common,uncommon,rare,epic,legendary
+weak,70,22,6,2,0
+normal,45,32,15,6,2
+elite,15,35,30,15,5
+boss,0,15,35,35,15
+shop,40,30,20,8,2

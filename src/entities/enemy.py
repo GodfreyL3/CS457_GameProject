@@ -35,6 +35,7 @@ class Enemy(Entity):
         self.resistance = row['resistance']
         self.coin_min = int(row['coin_min'])
         self.coin_max = int(row['coin_max'])
+        self.coins = self.rollCoins()
 
     def getLootTable(self):
         return self.loot_table

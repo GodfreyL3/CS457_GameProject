@@ -1,6 +1,8 @@
 import sys
 import argparse
 import socket
+import json
+from core.message import Message
 
 # Init parser and define command-line arguments
 parser = argparse.ArgumentParser(description="Client for CS457 RPG Game Project")
@@ -28,6 +30,7 @@ except socket.gaierror:
 
 print(f"[INFO] ....Game server IP resolved to {server_ip}!")
 
+client_socket = None
 try:
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.settimeout(5)  # Set a timeout for the connection attempt
@@ -37,10 +40,25 @@ except socket.error as e:
     print(f"[ERROR] Failed to connect to game server: {e}")
     sys.exit(1)
 
+# Ask the player for their name
+print("[INFO] Please enter your player name:")
+player_name = input("> ")
+
+# Format into Message JSON
+connect_msg = Message(msg_type="connect", payload={"player_name": player_name})
+
+# Send the player name to the server
+try:
+    client_socket.sendall(player_name.encode())
+except socket.error as e:
+    print(f"[ERROR] Failed to send player name to server: {e}")
+    client_socket.close()
+    sys.exit(1)
 
 # Enter the main game loop for the client
 while True:
     try:
+
 
         
         

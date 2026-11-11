@@ -4,6 +4,9 @@ from core.stats import Stat
 from entities.entity import Entity, AFFINITY_MISMATCH_MULTIPLIER, RESISTED_DAMAGE_MULTIPLIER
 from entities.character_classes import ThiefClass, WizardClass, KnightClass
 from items.item_factory import ItemFactory
+from items.weapon_item import WeaponItem
+from items.armour_item import ArmourItem
+from items.consumable_item import ConsumableItem
 
 
 class Player(Entity):
@@ -61,6 +64,17 @@ class Player(Entity):
 
     def getCharacterClass(self):
         return self.character_class
+
+    # Consumables go to the backpack, weapons and armour are equipped
+    def receiveItem(self, item):
+        if isinstance(item, ConsumableItem):
+            self.backpack.append(item)
+        elif isinstance(item, WeaponItem):
+            self.equipWeapon(item)
+        elif isinstance(item, ArmourItem):
+            self.equipArmor(item)
+        else:
+            raise TypeError(f"Cannot receive item of type {type(item).__name__}")
 
     # Backpack only holds consumable items
     # So when you equip, it's lost forever

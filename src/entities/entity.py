@@ -25,6 +25,7 @@ class Entity(ABC):
         self.strength = strength
         self.intelligence = intelligence
         self.affinity = affinity
+        self.coins = 0
         self.status_effects = []
 
     def getName(self):
@@ -40,6 +41,13 @@ class Entity(ABC):
         return self.affinity
 
     # Stat getters include bonuses from active status effects
+    def getCoins(self):
+        return self.coins
+
+    def modifyCoins(self, amount: int):
+        self.coins = max(0, self.coins + amount)
+        return self.coins
+
     def getConstitution(self):
         return self.constitution + self.getEffectBonus(Stat.CON)
 
