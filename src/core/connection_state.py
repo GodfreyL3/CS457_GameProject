@@ -1,3 +1,4 @@
+import json
 import selectors
 import socket
 
@@ -22,21 +23,18 @@ class ConnectionState:
 
     def read(self):
         try:
-            # Attempt to read data from the socket
             data = self.sock.recv(4096)
-            
-            # Append received data to the receive buffer if any was read
-            if data:
-                self.receive_buffer.feed(data)
-            else:
-                # No data means the peer closed the connection
-                raise ConnectionResetError("Peer closed connection")
+        except BlockingIOError:
+            return
 
-            # Process complete messages from the receive buffer
-            self.process_response()
-            
-        except (BlockingIOError, ConnectionResetError):
-            raise ConnectionResetError("Peer closed connection")
+        if not data:
+            raise ConnectionError("Peer closed connection")
+
+        # Feed the received data into the receive buffer and process any complete messages
+        new_messages = self.receive_buffer.feed(data)
+
+        for message in new_messages:
+            self.handle_message(message)
 
     def write(self):
         if self.send_buffer:
@@ -47,39 +45,26 @@ class ConnectionState:
                 pass
 
 
-    def process_response(self):
-        
-        # While there is data in the receive buffer, attempt to parse complete messages
-        while self.receive_buffer:
-            try:
-                # Attempt to parse a complete message from the receive buffer
-                message, remaining = MessageBuffer.parse_message(self.receive_buffer)
-
-                # Successfully parsed a complete message
-                # also update the receive buffer to reflect remaining unprocessed data
-                self.receive_buffer = remaining
-
-                # Handle the parsed message
-                self.handle_message(message)
-            except ProtocolMessage.IncompleteMessage:
-                break
-
     def handle_message(self, message):
         # Grab the message attributes for processing
-        msg_type = message.type
-        msg_id = message.id
+        msg_type = message.msg_type
+        msg_id = message.request_id
         content = message.payload
         timestamp = message.timestamp
 
         # Implement the logic to handle the message based on its type and content
         match msg_type:
             case "CONNECT_OK":
-                pass
+                self.connect_ok(content)
             case "CONNECT_ERR":
                 pass
             case "WAIT_FOR_PLAYERS":
                 pass
             case "OTHER_PLAYER_DISCONNECTED":
+                pass
+            case "CLASS_CHOICE_OK":
+                pass
+            case "CLASS_CHOICE_ERR":
                 pass
             case "GAME_START":
                 pass
@@ -91,9 +76,32 @@ class ConnectionState:
                 pass
             case "GAME_WON":
                 pass
-            case "PROTOCOL_ERROR":
+            case "PROTOCOL_ERR":
+                pass
+            case _:
                 pass
 
+        return
 
-                
+
+    # Below will be utility methods for displaying CLI UI to user depending on the message received
+    def connect_ok(self, content=dict):
+
+        print(f"Connection established successfully!\nWelcome {content.player_name}")
+        print(f"You are player {content.player_num}")
+        print(f"Please select your class:")
+        print(f"1. Thief")
+        print(f"2. Wizard")
+        print(f"3. Knight")
+        print(f"====================")
+        print(f"Enter the number corresponding to your class choice:")
+
+        # return here, main loop will handle input from the user
+        # and write it to the socket.
+        return
+
+    def connect_err(self, content=dict):
+        print(f"Connection error occurred. Code: {content.code}")
+        print(f"Error message: {content.message}")
         
+        return
