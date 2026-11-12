@@ -1,21 +1,19 @@
 import sys
 import argparse
 import socket
-import json
-from core.message import Message
+import selectors
+from src.core.connection_state import ConnectionState
+
 
 # Init parser and define command-line arguments
 parser = argparse.ArgumentParser(description="Client for CS457 RPG Game Project")
-parser.add_argument("-h", "--help", action="help", help="Show this help message and exit")
 parser.add_argument("-i",  type=str, default="localhost", help="Game Server DNS Hostname")
 parser.add_argument("-p", type=int, default=12345, help="Game Server Port")
 
 args = parser.parse_args()
 
-# Print help and exit if -h or --help is specified or if required arguments are missing
-if args.h or args.i is None or args.p is None:
-    parser.print_help()
-    sys.exit(0)
+# Init selector
+sel = selectors.DefaultSelector()
 
 # Parse args and extract hostname and port,
 # then resolve the hostname to an IP address
@@ -30,43 +28,26 @@ except socket.gaierror:
 
 print(f"[INFO] ....Game server IP resolved to {server_ip}!")
 
-client_socket = None
+
+# Start the connection
+addr = (server_ip, port)
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.setblocking(False) # Set the socket to non-blocking mode
+sock.connect_ex(addr) # Initiate non-blocking connection to the server
+state = ConnectionState(sel, sock, addr)
+events = selectors.EVENT_READ | selectors.EVENT_WRITE
+sel.register(sock, events, data=state)
+
+# Enter the main event loop to handle socket events
 try:
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.settimeout(5)  # Set a timeout for the connection attempt
-    client_socket.connect((server_ip, port))
-    print(f"[INFO] Successfully connected to game server at {server_ip}:{port}")
-except socket.error as e:
-    print(f"[ERROR] Failed to connect to game server: {e}")
-    sys.exit(1)
+    while True:
+        events = sel.select(timeout=1)
+        for key, mask in events:
+            state = key.data
 
-# Ask the player for their name
-print("[INFO] Please enter your player name:")
-player_name = input("> ")
-
-# Format into Message JSON
-connect_msg = Message(msg_type="connect", payload={"player_name": player_name})
-
-# Send the player name to the server
-try:
-    client_socket.sendall(player_name.encode())
-except socket.error as e:
-    print(f"[ERROR] Failed to send player name to server: {e}")
-    client_socket.close()
-    sys.exit(1)
-
-# Enter the main game loop for the client
-while True:
-    try:
-
-
-        
-        
-    except KeyboardInterrupt:
-        print("\n[INFO] Exiting game client.")
-        client_socket.close()
-        sys.exit(0)
-    except socket.error as e:
-        print(f"[ERROR] Connection error: {e}")
-        client_socket.close()
-        sys.exit(1)
+except KeyboardInterrupt:
+    print("[INFO] Client interrupted by user")
+finally:
+    sel.unregister(sock)
+    sock.close()
+    sel.close()
