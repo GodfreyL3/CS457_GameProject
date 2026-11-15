@@ -52,7 +52,7 @@ class ProtocolMessage:
             raise ValueError(f"Invalid JSON: {e}")
 
     # One message per line; json.dumps escapes newlines inside strings
-    def to_line(self) -> bytes:
+    def encode(self) -> bytes:
         return (self.to_json() + "\n").encode("utf-8")
 
     @classmethod
