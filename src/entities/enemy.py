@@ -49,6 +49,15 @@ class Enemy(Entity):
     def getDamageType(self):
         return self.damage_type
 
+    def getEnemyState(self):
+        return {
+            "name": self.getName(),
+            "curr_health": self.getCurrentHealth(),
+            "max_health": self.getMaxHealth(),
+            "affinity": self.getAffinity(),
+            "damage_type": self.getDamageType(),
+        }
+
     def rollCoins(self):
         return random.randint(self.coin_min, self.coin_max)
 

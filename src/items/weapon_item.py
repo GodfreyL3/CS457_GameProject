@@ -23,6 +23,15 @@ class WeaponItem(BaseItem):
     def rollDamage(self):
         return random.randint(self.damage_min, self.damage_max)
 
+    def getItemState(self):
+        return {
+            "name": self.getFullName(),
+            "damage": {"min": self.damage_min, "max": self.damage_max},
+            "damage_type": self.damage_type,
+            "skill_type": self.affinity,
+            "effects": {},
+        }
+
     def display_info(self):
         return (f"{self.getFullName()} [{self.rarity.name}] "
                 f"{self.damage_min}-{self.damage_max} {self.damage_type} damage")

@@ -65,6 +65,27 @@ class Player(Entity):
     def getCharacterClass(self):
         return self.character_class
 
+    def getPlayerState(self):
+        armor = self.getArmor()
+        weapon = self.getWeapon()
+        return {
+            "name": self.getName(),
+            "class": type(self.getCharacterClass()).__name__.removesuffix("Class").lower(),
+            "skill_pts": {
+                "CON": self.getConstitution(),
+                "DEX": self.getDexterity(),
+                "STR": self.getStrength(),
+                "INT": self.getIntelligence(),
+            },
+            "curr_health": self.getCurrentHealth(),
+            "max_health": self.getMaxHealth(),
+            "coin": self.getCoins(),
+            "armour": armor.getItemState() if armor else None,
+            "l_item": None,
+            "r_item": weapon.getItemState() if weapon else None,
+            "backpack": [item.getItemState() for item in self.getBackpack()],
+        }
+
     # Consumables go to the backpack, weapons and armour are equipped
     def receiveItem(self, item):
         if isinstance(item, ConsumableItem):

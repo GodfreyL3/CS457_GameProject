@@ -25,6 +25,19 @@ class ConsumableItem(BaseItem):
     def rollEffect(self):
         return random.randint(self.effect_min, self.effect_max)
 
+    def getItemState(self):
+        return {
+            "id": self.id,
+            "name": self.getFullName(),
+            "quantity": 1,
+            "effect_type": self.effect_type,
+            "stat": self.stat.value,
+            "effect_min": self.effect_min,
+            "effect_max": self.effect_max,
+            "duration": self.duration,
+            "target": self.target,
+        }
+
     def display_info(self):
         return (f"{self.getFullName()} [{self.rarity.name}] "
                 f"{self.effect_type} {self.stat.value} {self.effect_min}-{self.effect_max}")

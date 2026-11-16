@@ -29,6 +29,13 @@ class BaseItem(ABC):
     def getFullName(self) -> str:
         return f"{self.prefix} {self.name}"
 
+    def getListingState(self):
+        return {
+            "name": self.getFullName(),
+            "type": self.type,
+            "id": self.id,
+        }
+
     @abstractmethod
     def display_info(self):
         pass

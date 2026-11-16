@@ -1,6 +1,10 @@
+from random import random
 import selectors
 
 from entities.player import Player
+from stages.event_stage import EventStage
+from stages.shop_stage import ShopStage
+from stages.battle_stage import BattleStage
 
 from .message import MessageBuffer, ProtocolMessage
 
@@ -25,12 +29,13 @@ class Mode:
 class GameState:
 
     def __init__(self, selector):
+        
 
-        # Player objects
-        self.player1 = None
-        self.player2 = None
-        self.p1_name = None
-        self.p2_name = None
+        # Holds temp player data (e.g., name) before character selection
+        self.p1_data = None
+        self.p2_data = None
+
+        # Holds the sockets for each player
         self.p1_socket = None
         self.p2_socket = None
 
@@ -39,6 +44,19 @@ class GameState:
         self.receive_buffer = MessageBuffer()
         # Game state
         self.mode = Mode.WAIT_FOR_PLAYERS
+
+        # ===== GAME STATE VARIABLES =====
+        self.available_areas = [] # Can hold the list of areas available next
+        self.area = None # holds the current area being played
+
+        # Player objects representing the two players in the game
+        self.player1 = None
+        self.player2 = None
+
+        # Objects representing the stage and level and total stages passed
+        self.stage = 1
+        self.level = 1
+        self.total_stages_passed = 0
 
 
     def queue_message(self, player_num, message):
@@ -85,8 +103,26 @@ class GameState:
             if message_type == "CONNECT":
                 self.process_connect_msg(message, socket)
 
-            elif message_type == "CHARACTER_SELECTION":
+            elif message_type == "CLASS_CHOICE":
                 self.process_class_selection_msg(message, socket)
+
+            elif message_type == "AREA_CHOICE":
+                self.process_area_choice_msg(message, socket)
+
+            elif message_type == "PLAYER_AREA_ACTION":
+                self.process_player_area_action_msg(message, socket)
+
+            elif message_type == "PLAYER_ATTACK_ACTION":
+                self.process_player_attack_action_msg(message, socket)
+
+            elif message_type == "PLAYER_DEFEND_ACTION":
+                self.process_player_defend_action_msg(message, socket)
+
+            elif message_type == "PLAYER_USE_ITEM_ACTION":
+                self.process_player_use_item_action_msg(message, socket)
+
+            elif message_type == "PLAYER_PICK_UP_ACTION":
+                self.process_player_pick_up_action_msg(message, socket)
 
 
         except Exception as e:
@@ -102,14 +138,14 @@ class GameState:
         # Assign socket and name to the first available player slot
         if self.p1_socket is None:
             self.p1_socket = socket
-            self.p1_name = message.payload.get("name")
+            self.p1_data = message.payload.get("name")
         elif self.p2_socket is None:
             self.p2_socket = socket
-            self.p2_name = message.payload.get("name")
+            self.p2_data = message.payload.get("name")
 
         # If both player sockets are connected, transition to character selection mode
         if self.p1_socket and self.p2_socket:
-            self.mode = Mode.CHARACTER_SELECTION
+            self.mode = Mode.CLASS_CHOICE
 
         # Send connections back to both by writing to the send buffer
         # Add class selection prompt for both players
@@ -142,24 +178,107 @@ class GameState:
         player_num = 1 if socket == self.p1_socket else 2
 
         # Deconstruct the payload and update the player objects accordingly
-        if self.mode != Mode.CHARACTER_SELECTION:
-            self.queue_message(player_num, ProtocolMessage("ERR", {"message": "Not in character selection mode"}))
+        if self.mode != Mode.CLASS_CHOICE:
+            self.queue_message(player_num, ProtocolMessage("ERR", {"message": "Not in class choice mode"}))
             return
 
         # Update the player object based on the player number
         if player_num == 1:
-            self.player1 = Player(name=self.p1_name, character_class=payload.get("class"))
+            self.player1 = Player(name=self.p1_data, character_class=payload.get("class"))
         else:
-            self.player2 = Player(name=self.p2_name, character_class=payload.get("class"))
+            self.player2 = Player(name=self.p2_data, character_class=payload.get("class"))
 
         # Transition to area selection mode if both players have selected their classes
         if self.player1 and self.player2:
             self.mode = Mode.AREA_SELECTION
 
-            self.queue_message(1, ProtocolMessage("AREA_SELECTION", {}))
-            self.queue_message(2, ProtocolMessage("AREA_SELECTION", {}))
+            # Use rand to generate 3 random areas between a fight, shop, or event
+            self.available_areas = [random.choice(["fight", "shop", "event"]) for _ in range(3)]
+
+            # Generate payload
+            payload = {"choices": [
+                {"choice_id": "1", "type": self.available_areas[0]},
+                {"choice_id": "2", "type": self.available_areas[1]},
+                {"choice_id": "3", "type": self.available_areas[2]}
+            ]}
+
+            # Empty the temp data
+            self.player1_data = None
+            self.player2_data = None
+
+            # Send to both players the area selection choices
+            self.queue_message(1, ProtocolMessage("AREA_SELECTION", payload))
+            self.queue_message(2, ProtocolMessage("AREA_SELECTION", payload))
         else:
             self.queue_message(player_num, ProtocolMessage("WAIT_FOR_OTHER_PLAYER", {"reason": "Waiting for the other player to select a class"}))
 
         return
+
+    def process_area_choice_msg(self, message: ProtocolMessage, socket=None):
+
+        # Determine player number based on socket
+        if socket != self.p1_socket and socket != self.p2_socket:
+            self.queue_message(1, ProtocolMessage("ERR", {"message": "Invalid socket connection"}))
+            return
+
+        # Determine the player number based on the socket connection
+        player_num = 1 if socket == self.p1_socket else 2
+
+        # Extract the choice num from the message payload
+        choice_id = message.payload.get("choice_id")
+
+        # Validate the choice_id
+        if choice_id not in ["1", "2", "3"]:
+            self.queue_message(player_num, ProtocolMessage("ERR", {"message": "Invalid area choice"}))
+            return
+
+        # Store players choice 
+        if player_num == 1:
+            self.player1_data = choice_id
+        else:
+            self.player2_data = choice_id
+
+        if self.player1_data is not None and self.player2_data is not None:
+            # Both players have made their choices, determine the next area
+            area1 = self.available_areas[int(self.player1_data) - 1]
+            area2 = self.available_areas[int(self.player2_data) - 1]
+
+            # If both payers selected different areas, do a coin flip to determine which area to use
+            if area1 != area2:
+                chosen_area = random.choice([area1, area2])
+                area1 = chosen_area
+                area2 = chosen_area
+
+            # Consolidate the chosen area as the current area for the game
+            self.area = area1
     
+            # Now fetch the type, and have the stage generate the appropriate content based on the area type
+            area_type = self.area
+            if area_type == "fight":
+                self.stage = BattleStage(self.level, self.player1, self.player2)
+            elif area_type == "shop":
+                # Randomize stock size
+                stock_size = random.randint(1, 5)
+                self.stage = ShopStage(self.level, self.player1, self.player2, stock_size)
+            elif area_type == "event":
+                self.stage = EventStage(self.player1, self.player2)
+
+        else:
+            self.queue_message(player_num, ProtocolMessage("WAIT_FOR_OTHER_PLAYER", {"reason": "Waiting for the other player to select an area"}))
+
+
+
+    def process_player_area_action_msg(self, message: ProtocolMessage, socket=None):
+        pass
+
+    def process_player_attack_action_msg(self, message: ProtocolMessage, socket=None):
+        pass
+
+    def process_player_defend_action_msg(self, message: ProtocolMessage, socket=None):
+        pass
+
+    def process_player_use_item_action_msg(self, message: ProtocolMessage, socket=None):
+        pass
+
+    def process_player_pick_up_action_msg(self, message: ProtocolMessage, socket=None):
+        pass

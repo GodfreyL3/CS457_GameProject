@@ -8,8 +8,9 @@ MAX_ENCOUNTER_SIZE = 3
 
 
 class BattleStage(Stage):
-    def __init__(self, level: int, enemies: list = None):
-        super().__init__(level, enemies if enemies is not None else self._generate_enemies(level))
+    def __init__(self, level: int, player1, player2, enemies: list = None):
+        super().__init__(level, player1, player2,
+                         enemies if enemies is not None else self._generate_enemies(level))
 
     @staticmethod
     def _generate_enemies(level: int) -> list:
