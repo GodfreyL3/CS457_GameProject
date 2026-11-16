@@ -44,10 +44,15 @@ def handle_input(connection_state, line):
 
 # Init parser and define command-line arguments
 parser = argparse.ArgumentParser(description="Client for CS457 RPG Game Project")
-parser.add_argument("-i",  type=str, default="localhost", help="Game Server DNS Hostname")
-parser.add_argument("-p", type=int, default=12345, help="Game Server Port")
+parser.add_argument("-i",  type=str, required=True, help="Game Server DNS Hostname")
+parser.add_argument("-p", type=int, required=True, help="Game Server Port")
 
 args = parser.parse_args()
+
+# Print help if i or p are not provided
+if not args.i or not args.p:
+    parser.print_help()
+    sys.exit(1)
 
 player_name = input("Enter your player name: ").strip()
 if not player_name:
@@ -81,8 +86,7 @@ sel.register(sock, events, data=state)
 sel.register(sys.stdin, selectors.EVENT_READ, data="stdin") # register stdin for reading
 state.queue_message(ProtocolMessage("CONNECT", {"player_name": player_name}))
 
-# TODO: On Linux, register sys.stdin for selectors.EVENT_READ as well.
-# Use a distinct data value so stdin events can be distinguished from socket events.
+
 
 # Enter the main event loop to handle socket events
 try:
