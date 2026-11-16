@@ -176,7 +176,8 @@
         { "choice_id": "2", "type": "shop", "area_number": 2 },
         { "choice_id": "3", "type": "event", "area_number": 2 }
         ],
-        "message": "Choose the next area."
+        "message": "Choose the next area.",
+        "available_actions": []
     },
     "timestamp": 1727000000
     }

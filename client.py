@@ -11,9 +11,15 @@ def handle_input(connection_state, line):
 
     message = None
     if connection_state.get_input_mode() == "CLASS_CHOICE":
-
-        # Encode into Message and send
-        message = ProtocolMessage(msg_type="CLASS_CHOICE", payload=line)
+        choices = {"1": "thief", "2": "wizard", "3": "knight"}
+        if line not in choices:
+            print("[ERROR] Choose 1, 2, or 3.")
+            return
+        connection_state.queue_message(
+            ProtocolMessage(msg_type="CLASS_CHOICE", payload={"class": choices[line]})
+        )
+        connection_state.input_mode = "WAITING"
+        return
     elif connection_state.get_input_mode() == "AREA_CHOICE":
         message = ProtocolMessage(msg_type="AREA_CHOICE", payload=line)
     elif connection_state.get_input_mode() == "AREA" and connection_state.has_turn:

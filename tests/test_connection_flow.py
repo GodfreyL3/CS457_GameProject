@@ -2,6 +2,8 @@ import selectors
 import socket
 import subprocess
 import sys
+import os
+import time
 import unittest
 from contextlib import redirect_stdout
 from io import StringIO
@@ -81,8 +83,36 @@ class ConnectionFlowTests(unittest.TestCase):
                 self.assertTrue(first_reply.payload["session_id"])
                 self.assertEqual(set(first_reply.payload["classes"]), {"thief", "wizard", "knight"})
 
-                first.sendall(ProtocolMessage("CLASS_CHOICE", {"class": "KNIGHT"}).encode())
-                self.assertEqual(self.receive_messages(first)[0].msg_type, "WAIT_FOR_OTHER_PLAYER")
+                first.sendall(ProtocolMessage("CLASS_CHOICE", {"class": "bad"}, "bad-1").encode())
+                invalid = self.receive_messages(first)[0]
+                self.assertEqual(invalid.msg_type, "CLASS_CHOICE_ERR")
+                self.assertEqual(invalid.payload["code"], "INVALID_CLASS")
+                self.assertEqual(invalid.request_id, "bad-1")
+
+                first.sendall(ProtocolMessage("CLASS_CHOICE", {"class": "knight"}, "class-1").encode())
+                first_class = self.receive_messages(first)[0]
+                self.assertEqual(first_class.msg_type, "CLASS_CHOICE_OK")
+                self.assertEqual(first_class.payload["class"], "knight")
+                self.assertEqual(first_class.payload["stats"]["STR"], 7)
+                self.assertTrue(first_class.payload["waiting_for_other_player"])
+                self.assertEqual(first_class.request_id, "class-1")
+
+                second.sendall(ProtocolMessage("CLASS_CHOICE", {"class": "wizard"}, "class-2").encode())
+                first_messages = self.receive_until(first, "AREA_SELECT")
+                second_messages = self.receive_until(second, "AREA_SELECT")
+                self.assertEqual([msg.msg_type for msg in first_messages], ["GAME_START", "AREA_SELECT"])
+                self.assertEqual(
+                    [msg.msg_type for msg in second_messages],
+                    ["CLASS_CHOICE_OK", "GAME_START", "AREA_SELECT"],
+                )
+                self.assertFalse(second_messages[0].payload["waiting_for_other_player"])
+                self.assertEqual(second_messages[0].request_id, "class-2")
+                for messages in (first_messages, second_messages):
+                    client_state = ConnectionState(Mock(), Mock(), ("localhost", port))
+                    with redirect_stdout(StringIO()):
+                        for message in messages:
+                            client_state.handle_message(message)
+                    self.assertEqual(client_state.input_mode, "AREA_CHOICE")
 
     def test_client_sends_connect_with_prompted_name(self):
         with socket.socket() as listener:
@@ -101,10 +131,52 @@ class ConnectionFlowTests(unittest.TestCase):
             with listener.accept()[0] as connection:
                 connection.settimeout(5)
                 messages = self.receive_messages(connection)
+                connection.sendall(ProtocolMessage("CONNECT_OK", {
+                    "player_num": 1, "player_name": "Ari",
+                }).encode())
+                self.wait_for_output(process, b"Enter the number corresponding to your class choice:")
+                process.stdin.write("9\n")
+                process.stdin.flush()
+                self.wait_for_output(process, b"[ERROR] Choose 1, 2, or 3.")
+                connection.settimeout(0.1)
+                with self.assertRaises(socket.timeout):
+                    connection.recv(4096)
+                connection.settimeout(5)
+                process.stdin.write("3\n")
+                process.stdin.flush()
+                choice = self.receive_messages(connection)[0]
 
         self.assertEqual(len(messages), 1)
         self.assertEqual(messages[0].msg_type, "CONNECT")
         self.assertEqual(messages[0].payload, {"player_name": "Ari"})
+        self.assertEqual(choice.msg_type, "CLASS_CHOICE")
+        self.assertEqual(choice.payload, {"class": "knight"})
+
+    @staticmethod
+    def wait_for_output(process, expected):
+        output = b""
+        deadline = time.monotonic() + 5
+        with selectors.DefaultSelector() as selector:
+            selector.register(process.stdout, selectors.EVENT_READ)
+            while expected not in output:
+                timeout = deadline - time.monotonic()
+                if timeout <= 0 or not selector.select(timeout):
+                    raise AssertionError(f"Client did not print {expected!r}; got {output!r}")
+                chunk = os.read(process.stdout.fileno(), 4096)
+                if not chunk:
+                    raise AssertionError(f"Client exited before printing {expected!r}; got {output!r}")
+                output += chunk
+
+    @staticmethod
+    def receive_until(sock, msg_type):
+        buffer = MessageBuffer()
+        messages = []
+        while not any(message.msg_type == msg_type for message in messages):
+            chunk = sock.recv(4096)
+            if not chunk:
+                raise ConnectionError("Connection closed before expected message arrived")
+            messages.extend(buffer.feed(chunk))
+        return messages
 
     @staticmethod
     def receive_messages(sock):

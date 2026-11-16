@@ -1,5 +1,6 @@
-from random import random
+import random
 import selectors
+from time import time
 from uuid import uuid4
 
 from entities.player import Player
@@ -108,7 +109,7 @@ class GameState:
                 return self.process_connect_msg(message, socket)
 
             elif message_type == "CLASS_CHOICE":
-                self.process_class_selection_msg(message, socket)
+                return self.process_class_selection_msg(message, socket)
 
             elif message_type == "AREA_CHOICE":
                 self.process_area_choice_msg(message, socket)
@@ -186,23 +187,48 @@ class GameState:
         return
 
     def process_class_selection_msg(self, message: ProtocolMessage, socket=None):
+        if socket is not None and socket == self.p1_socket:
+            player_num = 1
+        elif socket is not None and socket == self.p2_socket:
+            player_num = 2
+        else:
+            return "ERROR: Class choice from an unknown socket"
 
-        # Get message payload
-        payload = message.payload
-
-        # Determine socket and corresponding player
-        player_num = 1 if socket == self.p1_socket else 2
-
-        # Deconstruct the payload and update the player objects accordingly
+        choice = message.payload.get("class")
         if self.mode != Mode.CLASS_SELECTION:
-            self.queue_message(player_num, ProtocolMessage("ERR", {"message": "Not in class choice mode"}))
+            code, error = "INVALID_STATE", "Not in class selection mode."
+        elif (self.player1 if player_num == 1 else self.player2) is not None:
+            code, error = "ALREADY_SELECTED", "You have already chosen a class."
+        elif not isinstance(choice, str) or choice.lower() not in ("thief", "wizard", "knight"):
+            code, error = "INVALID_CLASS", "Choose thief, wizard, or knight."
+        else:
+            code = error = None
+
+        if error:
+            self.queue_message(player_num, ProtocolMessage(
+                "CLASS_CHOICE_ERR", {"code": code, "message": error}, message.request_id
+            ))
             return
 
-        # Update the player object based on the player number
+        choice = choice.lower()
+        player = Player(name=self.p1_data if player_num == 1 else self.p2_data,
+                        character_class=choice.upper())
         if player_num == 1:
-            self.player1 = Player(name=self.p1_data, character_class=payload.get("class"))
+            self.player1 = player
         else:
-            self.player2 = Player(name=self.p2_data, character_class=payload.get("class"))
+            self.player2 = player
+
+        character_class = player.getCharacterClass()
+        self.queue_message(player_num, ProtocolMessage("CLASS_CHOICE_OK", {
+            "class": choice,
+            "stats": {
+                "CON": character_class.getConstitution(),
+                "DEX": character_class.getDexterity(),
+                "STR": character_class.getStrength(),
+                "INT": character_class.getIntelligence(),
+            },
+            "waiting_for_other_player": not (self.player1 and self.player2),
+        }, message.request_id))
 
         # Transition to area selection mode if both players have selected their classes
         if self.player1 and self.player2:
@@ -212,21 +238,27 @@ class GameState:
             self.available_areas = [random.choice(["fight", "shop", "event"]) for _ in range(3)]
 
             # Generate payload
-            payload = {"choices": [
-                {"choice_id": "1", "type": self.available_areas[0]},
-                {"choice_id": "2", "type": self.available_areas[1]},
-                {"choice_id": "3", "type": self.available_areas[2]}
-            ]}
+            payload = {
+                "choices": [
+                    {"choice_id": str(index), "type": area,
+                     "area_number": self.total_stages_passed + 1}
+                    for index, area in enumerate(self.available_areas, start=1)
+                ],
+                "message": "Choose the next area.",
+                "available_actions": [],
+            }
 
             # Empty the temp data
             self.player1_data = None
             self.player2_data = None
 
             # Send to both players the area selection choices
-            self.queue_message(1, ProtocolMessage("AREA_SELECTION", payload))
-            self.queue_message(2, ProtocolMessage("AREA_SELECTION", payload))
-        else:
-            self.queue_message(player_num, ProtocolMessage("WAIT_FOR_OTHER_PLAYER", {"reason": "Waiting for the other player to select a class"}))
+            for number in (1, 2):
+                self.queue_message(number, ProtocolMessage(
+                    "GAME_START", {"message": "Both players are ready. Starting the run."}
+                ))
+            
+                self.queue_message(number, ProtocolMessage("AREA_SELECT", payload))
 
         return
 
