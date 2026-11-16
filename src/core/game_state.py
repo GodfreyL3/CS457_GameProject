@@ -162,3 +162,4 @@ class GameState:
             self.queue_message(player_num, ProtocolMessage("WAIT_FOR_OTHER_PLAYER", {"reason": "Waiting for the other player to select a class"}))
 
         return
+    

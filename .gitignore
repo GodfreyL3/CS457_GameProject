@@ -1,0 +1,5 @@
+/src/__pycache__/
+/src/core/__pycache__/
+/src/network/__pycache__/
+/src/game/__pycache__/
+/src/ui/__pycache__/
