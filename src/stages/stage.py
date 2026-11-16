@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+import random
 
 from entities.player import Player
 from items.base_item import BaseItem
@@ -22,9 +23,32 @@ class Stage(ABC):
         self.player1 = player1
         self.player2 = player2
         self.enemies = list(enemies) if enemies else []
+        
         # Listing id -> StageItem; ids are never reused so players can't buy the wrong item
         self.items = {}
         self._next_listing_id = 1
+
+        # Turn num
+        self.turn_num = 0
+
+        # Turn list
+        initiative_order = []  # List of (entity, initiative_roll) tuples, sorted by initiative descending
+
+        # With players and enemies, roll for first turn
+        # Much like in DND, roll a 10 + or - DEX level / 2
+        p1_roll = random.randint(1, 10) + (self.player1.getDexterity() // 2)
+        initiative_order.append((self.player1, p1_roll))
+        p2_roll = random.randint(1, 10) + (self.player2.getDexterity() // 2)
+        initiative_order.append((self.player2, p2_roll))
+
+        # And now enemies same way as players, roll initiative based on DEX or similar stat
+        for enemy in self.enemies:  
+            enemy_roll = random.randint(1, 10) + (enemy.getDexterity() // 2)
+            initiative_order.append((enemy, enemy_roll))
+
+        # Sort initiative order descending
+        initiative_order.sort(key=lambda x: x[1], reverse=True)
+        self.initiative_order = [entity for entity, _ in initiative_order]
 
     @abstractmethod
     def getType(self) -> str:
@@ -72,20 +96,37 @@ class Stage(ABC):
         del self.items[listing_id]
         return listing.item
 
-    def getStageState(self, turn, message_stack):
-        """Return the LOAD_AREA_STATE payload using the current game context."""
+    def nextTurn(self):
+        self.turn_num += 1
 
-        # generate actions based on stage state
+    def getStageState(self, message_stack):
+        """Return the LOAD_AREA_STATE payload using the current game context."""
         
         # Can always use an item from the backpack
         available_actions = []
         available_actions.append("use_item")
 
+        # Can always attack if there are enemies alive
+        if any(enemy.isAlive() for enemy in self.enemies):
+            available_actions.append("attack")
+
+        # Can always defend
+        available_actions.append("defend")
+
+        # Can always pick up items if there are any available
+        if self.items:
+            available_actions.append("pick_up")
+
+        # Can always progress if all enemies are defeated
+        if self.canProgress():
+            available_actions.append("progress")
+
         
         return {
             "type": self.getType(),
             "level": self.getLevel(),
-            "turn": turn,
+            "turn_num": self.turn_num,
+            "turn": self.initiative_order[self.turn_num % len(self.initiative_order)],
             "can_progress": self.canProgress(),
             "message_stack": list(message_stack),
             "player1_state": self.player1.getPlayerState(),

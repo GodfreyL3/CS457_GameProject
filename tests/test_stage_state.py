@@ -1,5 +1,6 @@
 import json
 import unittest
+from unittest.mock import patch
 
 from entities.enemy import Enemy
 from entities.player import Player
@@ -84,6 +85,13 @@ class StageStateTests(unittest.TestCase):
                 state = stage.getStageState("p1", [])
                 self.assertEqual(state["player1_state"]["coin"], 5)
                 self.assertEqual(state["player2_state"]["name"], "Bea")
+
+    def test_battle_generates_enemies_when_not_supplied(self):
+        with patch.object(BattleStage, "_generate_enemies", return_value=[self.enemy]) as generate:
+            stage = BattleStage(2, self.player1, self.player2)
+
+        generate.assert_called_once_with(2)
+        self.assertEqual(stage.getEnemies(), [self.enemy])
 
 
 if __name__ == "__main__":
