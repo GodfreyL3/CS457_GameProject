@@ -1,5 +1,6 @@
 from random import random
 import selectors
+from uuid import uuid4
 
 from entities.player import Player
 from stages.event_stage import EventStage
@@ -14,7 +15,7 @@ from .message import MessageBuffer, ProtocolMessage
 # Enum states
 class Mode:
     WAIT_FOR_PLAYERS = 1
-    CHARACTER_SELECTION = 2
+    CLASS_SELECTION = 2
     AREA_SELECTION = 3
     AREA_STATE = 4
     PLAYER_TURN = 5
@@ -34,6 +35,9 @@ class GameState:
         # Holds temp player data (e.g., name) before character selection
         self.p1_data = None
         self.p2_data = None
+        self.p1_request_id = None
+        self.p2_request_id = None
+        self.session_id = str(uuid4())
 
         # Holds the sockets for each player
         self.p1_socket = None
@@ -101,7 +105,7 @@ class GameState:
         try:
 
             if message_type == "CONNECT":
-                self.process_connect_msg(message, socket)
+                return self.process_connect_msg(message, socket)
 
             elif message_type == "CLASS_CHOICE":
                 self.process_class_selection_msg(message, socket)
@@ -138,34 +142,46 @@ class GameState:
         # Assign socket and name to the first available player slot
         if self.p1_socket is None:
             self.p1_socket = socket
-            self.p1_data = message.payload.get("name")
+            self.p1_data = message.payload.get("player_name")
+            self.p1_request_id = message.request_id
         elif self.p2_socket is None:
             self.p2_socket = socket
-            self.p2_data = message.payload.get("name")
+            self.p2_data = message.payload.get("player_name")
+            self.p2_request_id = message.request_id
 
         # If both player sockets are connected, transition to character selection mode
         if self.p1_socket and self.p2_socket:
-            self.mode = Mode.CLASS_CHOICE
+            self.mode = Mode.CLASS_SELECTION
 
         # Send connections back to both by writing to the send buffer
         # Add class selection prompt for both players
         if self.mode == Mode.WAIT_FOR_PLAYERS:
-            self.queue_message(1, ProtocolMessage("WAIT_FOR_PLAYERS", {}))
-            self.queue_message(2, ProtocolMessage("WAIT_FOR_PLAYERS", {}))
+            self.queue_message(1, ProtocolMessage("WAIT_FOR_PLAYERS", {
+                "connected_players": 1,
+                "required_players": 2,
+                "reason": "PLAYER_NOT_CONNECTED",
+                "message": "Waiting for one more player to connect.",
+            }))
         else:
-            send_payload = {
-                "player_id": "p1",
-                "player_num": 1,
-                "classes": {
-                    "thief": { "CON": 4, "DEX": 7, "STR": 2, "INT": 5 },
-                    "wizard": { "CON": 4, "DEX": 5, "STR": 2, "INT": 7 },
-                    "knight": { "CON": 5, "DEX": 4, "STR": 7, "INT": 2 }
-                }
+            classes = {
+                "thief": { "CON": 4, "DEX": 7, "STR": 2, "INT": 5 },
+                "wizard": { "CON": 4, "DEX": 5, "STR": 2, "INT": 7 },
+                "knight": { "CON": 5, "DEX": 4, "STR": 7, "INT": 2 }
             }
-            # Class Dict
-
-            self.queue_message(1, ProtocolMessage("CONNECT_OK", send_payload))
-            self.queue_message(2, ProtocolMessage("CONNECT_OK", send_payload))
+            for player_num, name, request_id in (
+                (1, self.p1_data, self.p1_request_id),
+                (2, self.p2_data, self.p2_request_id),
+            ):
+                send_payload = {
+                    "player_id": f"p{player_num}",
+                    "player_num": player_num,
+                    "player_name": name,
+                    "session_id": self.session_id,
+                    "classes": classes,
+                }
+                self.queue_message(
+                    player_num, ProtocolMessage("CONNECT_OK", send_payload, request_id)
+                )
 
         return
 
@@ -178,7 +194,7 @@ class GameState:
         player_num = 1 if socket == self.p1_socket else 2
 
         # Deconstruct the payload and update the player objects accordingly
-        if self.mode != Mode.CLASS_CHOICE:
+        if self.mode != Mode.CLASS_SELECTION:
             self.queue_message(player_num, ProtocolMessage("ERR", {"message": "Not in class choice mode"}))
             return
 

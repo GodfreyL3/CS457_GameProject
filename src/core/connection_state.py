@@ -46,7 +46,7 @@ class ConnectionState:
         self.sock = sock
         self.addr = addr
         self.receive_buffer = MessageBuffer()
-        self.send_buffer = MessageBuffer()
+        self.send_buffer = bytearray()
         self.input_mode = "WAITING"
         self.has_turn = False
         self.available_actions = []
@@ -78,13 +78,22 @@ class ConnectionState:
         for message in new_messages:
             self.handle_message(message)
 
+    def queue_message(self, message):
+        self.send_buffer.extend(message.encode())
+        self.selector.modify(self.sock, selectors.EVENT_READ | selectors.EVENT_WRITE, data=self)
+
     def write(self):
         if self.send_buffer:
             try:
-                sent = self.sock.send(self.send_buffer.data)
-                self.send_buffer.consume(sent)
+                sent = self.sock.send(self.send_buffer)
+                if sent == 0:
+                    raise ConnectionError("Peer closed connection while sending")
+                del self.send_buffer[:sent]
             except BlockingIOError:
-                pass
+                return
+
+        if not self.send_buffer:
+            self.selector.modify(self.sock, selectors.EVENT_READ, data=self)
 
 
     def handle_message(self, message):

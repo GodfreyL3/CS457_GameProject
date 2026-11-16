@@ -43,6 +43,10 @@ parser.add_argument("-p", type=int, default=12345, help="Game Server Port")
 
 args = parser.parse_args()
 
+player_name = input("Enter your player name: ").strip()
+if not player_name:
+    parser.error("player name cannot be empty")
+
 # Init selector
 sel = selectors.DefaultSelector()
 
@@ -69,6 +73,7 @@ state = ConnectionState(sel, sock, addr)
 events = selectors.EVENT_READ | selectors.EVENT_WRITE
 sel.register(sock, events, data=state)
 sel.register(sys.stdin, selectors.EVENT_READ, data="stdin") # register stdin for reading
+state.queue_message(ProtocolMessage("CONNECT", {"player_name": player_name}))
 
 # TODO: On Linux, register sys.stdin for selectors.EVENT_READ as well.
 # Use a distinct data value so stdin events can be distinguished from socket events.

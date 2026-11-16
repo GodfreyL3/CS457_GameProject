@@ -2,10 +2,12 @@ import sys
 import argparse
 import socket
 import selectors
-
-from src.core.game_state import GameState
-from src.core.message import MessageBuffer
+from pathlib import Path
 from types import SimpleNamespace
+
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
+from core.game_state import GameState
+from core.message import MessageBuffer
 
 
 def accept_wrapper(sock):
@@ -32,7 +34,7 @@ lsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 lsock.bind(("", port))
 lsock.listen()
 lsock.setblocking(False)
-print(f"[INFO] Server listening on port {port}")
+print(f"[INFO] Server listening on port {lsock.getsockname()[1]}")
 sel = selectors.DefaultSelector()
 sel.register(lsock, selectors.EVENT_READ, data=None)
 
@@ -81,7 +83,9 @@ try:
                         if data:
                             for message in client.incoming.feed(data):
                                 print(f"[INFO] Received message from {client.addr}: {message.to_dict()}")
-                                # TODO: Pass the message and socket to the game state.
+                                error = game_state.procress_turn(message, sock)
+                                if error:
+                                    print(f"[ERROR] {error}")
                         else:
                             print(f"[INFO] Closing connection to {client.addr}")
                             sel.unregister(sock)

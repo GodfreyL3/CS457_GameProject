@@ -9,3 +9,5 @@ The client attaches this state to the selector, but its event handling is not
 implemented yet.
 
 Run the client from the project root with `python3 client.py -i HOST -p PORT`.
+It prompts for a player name and sends a `CONNECT` message. Run the server with
+`python3 server.py -p PORT`.

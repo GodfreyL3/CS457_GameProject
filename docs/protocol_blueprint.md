@@ -33,6 +33,7 @@
     "payload": {
         "player_id": "p1",
         "player_num": 1,
+        "player_name": "Ari",
         "session_id": "server-generated-session-id",
         "classes": {
         "thief": { "CON": 4, "DEX": 7, "STR": 2, "INT": 5 },
