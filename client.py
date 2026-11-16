@@ -21,7 +21,7 @@ def handle_input(connection_state, line):
         connection_state.input_mode = "WAITING"
         return
     elif connection_state.get_input_mode() == "AREA_CHOICE":
-        message = ProtocolMessage(msg_type="AREA_CHOICE", payload=line)
+        message = ProtocolMessage(msg_type="AREA_CHOICE", payload={"choice_id": line})
     elif connection_state.get_input_mode() == "AREA" and connection_state.has_turn:
         message = ProtocolMessage(msg_type="PLAYER_AREA_ACTION", payload=line)
     elif connection_state.get_input_mode() == "ATTACK" and connection_state.has_turn:
@@ -38,7 +38,7 @@ def handle_input(connection_state, line):
         print(f"[INFO] Ignoring input: {line}")
         return
 
-    connection_state.write(message.encode())
+    connection_state.queue_message(message)
 
     return
 
@@ -53,10 +53,6 @@ args = parser.parse_args()
 if not args.i or not args.p:
     parser.print_help()
     sys.exit(1)
-
-player_name = input("Enter your player name: ").strip()
-if not player_name:
-    parser.error("player name cannot be empty")
 
 # Init selector
 sel = selectors.DefaultSelector()
@@ -74,6 +70,9 @@ except socket.gaierror:
 
 print(f"[INFO] ....Game server IP resolved to {server_ip}!")
 
+player_name = input("Enter your player name: ").strip()
+if not player_name:
+    parser.error("player name cannot be empty")
 
 # Start the connection
 addr = (server_ip, port)

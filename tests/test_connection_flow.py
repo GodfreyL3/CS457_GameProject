@@ -145,12 +145,23 @@ class ConnectionFlowTests(unittest.TestCase):
                 process.stdin.write("3\n")
                 process.stdin.flush()
                 choice = self.receive_messages(connection)[0]
+                connection.sendall(ProtocolMessage("AREA_SELECT", {
+                    "message": "Choose the next area.",
+                    "choices": [{"choice_id": "2", "type": "shop", "area_number": 1}],
+                    "available_actions": [],
+                }).encode())
+                self.wait_for_output(process, b"Enter the number corresponding to your area choice:")
+                process.stdin.write("2\n")
+                process.stdin.flush()
+                area_choice = self.receive_messages(connection)[0]
 
         self.assertEqual(len(messages), 1)
         self.assertEqual(messages[0].msg_type, "CONNECT")
         self.assertEqual(messages[0].payload, {"player_name": "Ari"})
         self.assertEqual(choice.msg_type, "CLASS_CHOICE")
         self.assertEqual(choice.payload, {"class": "knight"})
+        self.assertEqual(area_choice.msg_type, "AREA_CHOICE")
+        self.assertEqual(area_choice.payload, {"choice_id": "2"})
 
     @staticmethod
     def wait_for_output(process, expected):

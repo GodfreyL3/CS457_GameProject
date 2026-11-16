@@ -21,11 +21,15 @@ def accept_wrapper(sock):
     sel.register(conn, selectors.EVENT_READ, data=client)
 
 parser = argparse.ArgumentParser(description="Server for CS457 RPG Game Project")
-parser.add_argument("-p", type=int, default=12345, help="Server Port")
+parser.add_argument("-p", type=int, required=True, help="Server Port")
 args = parser.parse_args()
 
 # init selector and server socket
 port = args.p
+
+if not port:
+    parser.print_help()
+    sys.exit(1)
 
 lsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
