@@ -235,7 +235,10 @@ class GameState:
             self.mode = Mode.AREA_SELECTION
 
             # Use rand to generate 3 random areas between a fight, shop, or event
-            self.available_areas = [random.choice(["fight", "shop", "event"]) for _ in range(3)]
+            # Make fights the most common area type
+            self.available_areas = [random.choices(
+                ["fight", "shop", "event"], weights=[0.6, 0.2, 0.2]
+            )[0] for _ in range(3)]
 
             # Generate payload
             payload = {
@@ -311,8 +314,12 @@ class GameState:
             elif area_type == "event":
                 self.stage = EventStage(self.player1, self.player2)
 
+            # Send message to both users
+            self.queue_message(1, ProtocolMessage("LOAD_AREA_STATE", self.stage.getStageState()))
+            self.queue_message(2, ProtocolMessage("LOAD_AREA_STATE", self.stage.getStageState()))
+
         else:
-            self.queue_message(player_num, ProtocolMessage("WAIT_FOR_OTHER_PLAYER", {"reason": "Waiting for the other player to select an area"}))
+            self.queue_message(player_num, ProtocolMessage("WAIT_FOR_PLAYERS", {"reason": "Waiting for the other player to select an area"}))
 
 
 

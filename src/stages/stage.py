@@ -34,6 +34,10 @@ class Stage(ABC):
         # Turn list
         initiative_order = []  # List of (entity, initiative_roll) tuples, sorted by initiative descending
 
+        # Stack of messages to be sent to the client to 
+        # keep track of the events that occur during the stage
+        self.message_stack = []
+
         # With players and enemies, roll for first turn
         # Much like in DND, roll a 10 + or - DEX level / 2
         p1_roll = random.randint(1, 10) + (self.player1.getDexterity() // 2)
@@ -99,7 +103,7 @@ class Stage(ABC):
     def nextTurn(self):
         self.turn_num += 1
 
-    def getStageState(self, message_stack):
+    def getStageState(self):
         """Return the LOAD_AREA_STATE payload using the current game context."""
         
         # Can always use an item from the backpack
@@ -128,7 +132,7 @@ class Stage(ABC):
             "turn_num": self.turn_num,
             "turn": self.initiative_order[self.turn_num % len(self.initiative_order)],
             "can_progress": self.canProgress(),
-            "message_stack": list(message_stack),
+            "message_stack": list(self.message_stack),
             "player1_state": self.player1.getPlayerState(),
             "player2_state": self.player2.getPlayerState(),
             "cpu_states": {
